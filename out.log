@@ -1,0 +1,12 @@
+F0119 23:33:26.781464 101351 io.cpp:36] Check failed: fd != -1 (-1 vs. -1) File not found: peddetect_solver.prototxt
+*** Check failure stack trace: ***
+    @     0x7fd1f42a6daa  (unknown)
+    @     0x7fd1f42a6ce4  (unknown)
+    @     0x7fd1f42a66e6  (unknown)
+    @     0x7fd1f42a9687  (unknown)
+    @     0x7fd1f4998dfd  caffe::ReadProtoFromTextFile()
+    @           0x408c67  train()
+    @           0x406bd1  main
+    @     0x7fd1f3007ec5  (unknown)
+    @           0x40736b  (unknown)
+    @              (nil)  (unknown)

@@ -1,0 +1,88 @@
+import commands
+import os
+import re
+import cv2
+import numpy as np
+import pdb
+import matplotlib.pyplot as plt
+import sys
+
+img_size_x = 64 # This is used for cifarnet and pednet
+img_size_y = 128 # This is used for cifarnet and pednet
+
+baseImagePath = '/media/data/santhosh/PedestrianDetection/data-USA/images/'
+baseDetectionsPath = '/home/santhosh/Projects/ANNCourse/DeeperLookAtPedDetection/Detections/'
+baseSavePath = '/home/santhosh/Projects/ANNCourse/ANN/Project/Images/'
+
+DetDirs = ['Detections06', 'Detections07', 'Detections08', 'Detections09', 'Detections10']
+
+for i in range(6, len(DetDirs)+6):
+    DetDir = DetDirs[i-6]
+    currDirPath = baseDetectionsPath+DetDir+'/' 
+    RoiDirs = commands.getoutput('ls '+currDirPath+' | grep results').split('\n')
+    print('=====>  Processing path: %s\n'%(DetDir))
+    
+    for j in range(len(RoiDirs)):
+        
+        fname = baseSavePath+'set%.2d'%(i)+'/'+'V%.3d.txt'%(j)
+        saveFile = open(fname, 'wb')
+        
+        os.system('mkdir -p '+baseSavePath+'set%.2d'%(i)+'/'+'V%.3d/'%(j))
+        print('===> Processing sub-path: %s'%(RoiDirs[j]))
+        currDirPath_ = currDirPath+RoiDirs[j]
+        currSavePath = baseSavePath+'set%.2d'%(i)+'/'+'V%.3d/'%(j)
+        images = commands.getoutput('ls '+currDirPath_ + ' | grep .txt').split('\n')
+        
+        if len(images[0]) > 0:
+            #print(images)
+            #print(len(images[0]))
+            for jter in range(len(images)):
+                image = images[jter]
+                imno = int(re.sub('[^0-9]', '', image)) + 1
+                imgPath = baseImagePath+'set%.2d'%(i)+'/V%.3d'%(j)+'/'+re.sub('.txt', '.jpg', image)
+                img = cv2.imread(imgPath)
+                
+                if (not img is None):
+                    ROIs = open(currDirPath_+'/'+image,'r').readlines()
+                    for k in range(len(ROIs)):
+
+                        ROI = re.sub('[\n ]','',ROIs[k]).split(',')
+                        #pdb.set_trace()
+                        ROI = map(float, ROI)
+                        ht = ROI[3]
+                        wt = ROI[2]
+                        
+
+                        #pdb.set_trace()
+                        if ROI[0] > 0 and ROI[1] > 0:
+                            #print(imgPath)
+                            ROI_img = img[max(ROI[1]-int(ht/13), 0):(ROI[1]+ROI[3]+int(ht/13)), max(0, ROI[0]-int(wt/6)):(ROI[0]+ROI[2]+int(wt/6))]
+                            #pdb.set_trace()
+                            sizes_w = np.size(ROI_img, 1)
+                            sizes_h = np.size(ROI_img, 0)
+                            #print("Sizes: %f x %f"%(sizes_w, sizes_h)) 
+                            if sizes_w > 2 and sizes_h > 5:
+                                ROI_img = cv2.resize(ROI_img, (img_size_x, img_size_y))
+                                ROI_img_copy = ROI_img.copy()
+                                ROI_img = ROI_img - meanFile;
+                                net.blobs['data'].data[...] = transformer.preprocess('data', ROI_img)*0.02469
+                                prediction = net.forward()
+                                prediction_val = prediction['prob'].argmax()      
+                                cv2.rectangle(img, (int(ROI[0]), int(ROI[1])), (int(ROI[0]+ROI[2]),int(ROI[1]+ROI[3])), (255, 0, 0), 2)
+                                cv2.putText(img, str(prediction['prob'][0][1]), (int(ROI[0]), int(ROI[1])), cv2.FONT_HERSHEY_SIMPLEX, 0.2, (255, 255, 255), 1)
+                                #pdb.set_trace()
+
+                                #print(prediction['prob'])
+                                #print(ROI)
+                                #cv2.imshow('Img', ROI_img_copy)
+
+                                #cv2.waitKey(0)
+                                
+                                saveString = str(imno) + ',' + str(ROI[0])+', '+str(ROI[1])+', '+str(ROI[2])+', '+str(ROI[3])+', '+str(prediction['prob'][0][1])+'\n' 
+                                print(saveString)
+                                saveFile.write(saveString)
+                
+                #cv2.imshow('Whole img', img)
+                #cv2.waitKey(0)
+        saveFile.close()
+
